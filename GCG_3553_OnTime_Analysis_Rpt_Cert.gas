@@ -1,0 +1,412 @@
+Program.Sub.ScreenSU.Start
+gui.SS_OTA..create
+gui.SS_OTA..caption("On Time Order Analysis Report")
+gui.SS_OTA..size(4135,1825)
+gui.SS_OTA..minx(0)
+gui.SS_OTA..miny(0)
+gui.SS_OTA..position(0,0)
+gui.SS_OTA..event(unload,ss_OTA_unload)
+gui.SS_OTA..alwaysontop(False)
+gui.SS_OTA..fontname("Arial")
+gui.SS_OTA..fontsize(8)
+gui.SS_OTA..forecolor(0)
+gui.SS_OTA..fontstyle(,,,,)
+gui.SS_OTA..BackColor(-2147483633)
+gui.SS_OTA..controlbox(True)
+gui.SS_OTA..maxbutton(False)
+gui.SS_OTA..minbutton(False)
+gui.SS_OTA..mousepointer(0)
+gui.SS_OTA..moveable(True)
+gui.SS_OTA..sizeable(False)
+gui.SS_OTA..ShowInTaskBar(True)
+gui.SS_OTA..titlebar(True)
+gui.SS_OTA.lbl_dtpStart.create(label,"Beginning Date",True,1800,200,1,100,135,True,0,Arial,8,-2147483633,0)
+gui.SS_OTA.lbl_dtpStart.defaultvalue("")
+gui.SS_OTA.lbl_dtpStart.controlgroup(0)
+gui.SS_OTA.dtpStart.create(datepicker)
+gui.SS_OTA.dtpStart.visible(True)
+gui.SS_OTA.dtpStart.size(1800,345)
+gui.SS_OTA.dtpStart.zorder(0)
+gui.SS_OTA.dtpStart.position(100,335)
+gui.SS_OTA.dtpStart.enabled(True)
+gui.SS_OTA.dtpStart.checkbox(False)
+gui.SS_OTA.dtpStart.defaultvalue("")
+gui.SS_OTA.dtpStart.controlgroup(0)
+gui.SS_OTA.lbl_dtpEnd.create(label,"Ending Date",True,1800,200,1,1985,135,True,0,Arial,8,-2147483633,0)
+gui.SS_OTA.lbl_dtpEnd.defaultvalue("")
+gui.SS_OTA.lbl_dtpEnd.controlgroup(0)
+gui.SS_OTA.dtpEnd.create(datepicker)
+gui.SS_OTA.dtpEnd.visible(True)
+gui.SS_OTA.dtpEnd.size(1800,345)
+gui.SS_OTA.dtpEnd.zorder(0)
+gui.SS_OTA.dtpEnd.position(1985,335)
+gui.SS_OTA.dtpEnd.enabled(True)
+gui.SS_OTA.dtpEnd.checkbox(False)
+gui.SS_OTA.dtpEnd.defaultvalue("")
+gui.SS_OTA.dtpEnd.controlgroup(0)
+gui.SS_OTA.cmdPrint.create(button)
+gui.SS_OTA.cmdPrint.caption("Print")
+gui.SS_OTA.cmdPrint.visible(True)
+gui.SS_OTA.cmdPrint.size(1000,360)
+gui.SS_OTA.cmdPrint.zorder(0)
+gui.SS_OTA.cmdPrint.position(100,850)
+gui.SS_OTA.cmdPrint.enabled(True)
+gui.SS_OTA.cmdPrint.fontname("Arial")
+gui.SS_OTA.cmdPrint.fontsize(8)
+gui.SS_OTA.cmdPrint.event(click,cmdprint_click)
+gui.SS_OTA.cmdPrint.defaultvalue("")
+gui.SS_OTA.cmdPrint.controlgroup(0)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.UDT.uOrders.Define("Order_No",String,Order_NO)
+Variable.uGlobal.uOrders.Declare("uOrders")
+Variable.UDT.uBI_Table.Define("BIRUNID",Long,BIRUNID)
+Variable.UDT.uBI_Table.Define("Type",String,Type)
+Variable.UDT.uBI_Table.Define("Bus_Unit",String,Bus_Unit)
+Variable.UDT.uBI_Table.Define("Name_Customer",String,Name_Customer)
+Variable.UDT.uBI_Table.Define("Customer_PO",String,Customer_PO)
+Variable.UDT.uBI_Table.Define("Order_NO",String,Order_NO)
+Variable.UDT.uBI_Table.Define("Order_Line",String,Order_Line)
+Variable.UDT.uBI_Table.Define("Part",String,Part)
+Variable.UDT.uBI_Table.Define("On_Time",Boolean,On_Time)
+Variable.UDT.uBI_Table.Define("Date_Due",Date,Date_Due)
+Variable.uGlobal.uBITable.Declare("uBI_Table")
+Variable.Global.iUB.Declare(Long,0)
+Variable.Global.iBIRUNID.Declare(Long,0)
+Variable.Global.iLogID.Declare(Long,0)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+'Quote 4208
+'Coded By TRT
+'3/26/2013
+
+'Updated GSS Cert BCC
+'7/24/2015
+
+'GAB Script that will pull in records for an On TIme Order Analysis Report to show break out by business unit, USA Production, and Distribution
+'Run via Report Preprocessor
+'open connection
+F.ODBC.Connection!ConX.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+
+'show the screen
+Gui.SS_OTA..Show
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3553_OnTime_Analysis_Rpt_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_ota_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+program.sub.cmdprint_click.start
+F.Intrinsic.Control.SetErrorHandler("cmdprint_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.dStartDate.Declare(Date)
+V.Local.dEndDate.Declare(Date)
+V.Local.iFor.Declare(Long,0)
+V.Local.iQtyShipped.Declare(Long)
+V.Local.iQtyOrdered.Declare(Long)
+'first our program will need to select all order from Order_Hist_Line Where the Date_Shipped field is within the date range
+'the user selected on the screen, ALSO where the Part on the Order Line exists in the inventory master.
+'This will give our program a list of order numbers to be evaluated for on time analysis..
+
+F.Global.BI.GetRunID(V.Global.iBIRUNID)
+F.Global.BI.StartLogging(V.Global.iBIRUNID,-1,-1,"",V.Global.iLogID)
+
+'make sure start date is before end date
+F.Intrinsic.Control.If(V.Screen.SS_OTA!dtpStart.Value,>,V.Screen.SS_OTA!dtpEnd.Value)
+	F.Intrinsic.UI.Msgbox("Start date cannot be before End date. Please try again.","Date Error")
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.EndIf
+
+Gui.SS_OTA..Visible(False)
+F.Intrinsic.UI.InvokeWaitDialog("Processing...","Gathering Information.")
+'dates conversion
+V.Local.dStartDate.Set(V.Screen.SS_OTA!dtpStart.Value)
+V.Local.dEndDate.Set(V.Screen.SS_OTA!dtpEnd.Value)
+'query
+F.Intrinsic.String.Build("Select distinct Order_No From V_Order_Hist_Line Where Date_Shipped  Between '{0}' AND '{1}' AND Part In (Select Part From Inventory_MSTR)",V.local.dStartDate.PervasiveDate,V.local.dEndDate.PervasiveDate,V.local.sSQL)
+F.ODBC.Connection!ConX.OpenLocalRecordsetRo("rst",V.Local.sSQL)
+
+F.Intrinsic.Control.If(V.ODBC.ConX!rst.EOF,=,True)
+	F.Intrinsic.UI.Msgbox("No Orders found for selected Date Range","No Orders Found")
+	F.ODBC.ConX!rst.Close
+	F.Intrinsic.UI.CloseWaitDialog
+	Gui.SS_OTA..Show
+	F.Intrinsic.Control.ExitSub
+F.Intrinsic.Control.Else
+	'populate the UDT uOrders with the Order No found from above query
+	F.Intrinsic.Variable.LoadUDTFromRecordset("ConX","rst","v.uglobal.uOrders",False)
+	F.ODBC.ConX!rst.Close
+F.Intrinsic.Control.EndIf
+
+'loop through all Order_No's in uOrders
+F.Intrinsic.Control.For(V.Local.iFor,V.uGlobal.uOrders.LBound,V.uGlobal.uOrders.UBound,1)
+	F.Intrinsic.UI.ChangeWaitStatus("Processing...",V.Local.iFor,V.uGlobal.uOrders.LBound,V.uGlobal.uOrders.UBound)
+	'query the FLAG_COMPL_SHIP from Order_Hist_Head to see if its equal to 'Y' for the selected Order
+	F.Intrinsic.String.Build("Select Flag_Compl_Ship From V_Order_Hist_Head Where Order_No = '{0}'",V.uglobal.uOrders(v.Local.iFor)!Order_No,V.Local.sSQL)
+	F.ODBC.Connection!ConX.OpenLocalRecordsetRO("rst",V.Local.sSQL)
+
+	F.Intrinsic.Control.If(V.ODBC.ConX!rst.EOF,<>,True)
+
+		F.Intrinsic.Control.If(V.ODBC.ConX!rst.FieldValTrim!Flag_Compl_Ship,=,"Y")
+			'going to call the ProcessShipY Records, becuase these will need some different infor
+			F.Intrinsic.Control.CallSub(Processshipy,"Order_No",V.uGlobal.uOrders(v.Local.iFor)!Order_No,"Order_Line","ALL")
+		F.Intrinsic.Control.Else
+			'need to do some more conditions to see if we should process these orders
+			'query open_hist-line, search for all records where the order and line being evaluated matchers order_no and Order_line in the table?
+			F.Intrinsic.String.Build("Select * From V_Order_Hist_Line Where Order_No = '{0}'",V.uGlobal.uOrders(v.Local.iFor)!Order_No,V.Local.sSQL)
+			F.ODBC.Connection!ConX.OpenLocalRecordsetRO("rstL",V.Local.sSQL)
+
+			F.Intrinsic.Control.If(V.ODBC.ConX!rstL.EOF,=,True)
+				F.ODBC.ConX!rstL.Close
+			F.Intrinsic.Control.Else
+
+				'lets go through each line and do some processing	
+				F.Intrinsic.Control.DoUntil(V.ODBC.ConX!rstL.EOF,=,True)
+					'go through each field and check to see if each line has shipped qty greater than order qty, do this for each line
+					'if any one line does not have a shipped qty greater than order qty we are not going to worry about it
+					V.local.iQtyShipped.Set(V.ODBC.ConX!rstL.FieldValTrim!Qty_Shipped)
+					V.Local.iQtyOrdered.Set(V.ODBC.ConX!rstL.fieldvaltrim!Qty_Ordered)
+
+					F.Intrinsic.Control.If(V.Local.iQtyShipped,>=,V.Local.iQtyOrdered)
+						'lets write this record becuase this particular line has been shipped for this order
+						'we only want to pay attention to the order_line particular of the one that was successfully shiped.
+						F.Intrinsic.Control.CallSub(Processshipy,"Order_No",V.ODBC.ConX!rstL.fieldvaltrim!Order_No,"Order_Line",V.ODBC.ConX!rstL.fieldvaltrim!Order_Line)
+					F.Intrinsic.Control.EndIf
+
+				F.ODBC.ConX!rstL.MoveNext
+				F.Intrinsic.Control.Loop
+				
+				F.ODBC.ConX!rstL.Close
+			F.Intrinsic.Control.EndIf
+
+		F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.EndIf
+
+F.ODBC.ConX!rst.Close
+F.Intrinsic.Control.Next(V.Local.iFor)
+
+F.Intrinsic.Control.CallSub(Udt2table)
+F.Intrinsic.Control.CallSub(Printreport)
+F.Intrinsic.Control.CallSub(Ss_ota_unload)
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdprint_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3553_OnTime_Analysis_Rpt_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_ota_unload)
+Function.Intrinsic.Control.EndIf
+
+
+program.sub.cmdprint_click.end
+
+program.sub.ss_OTA_unload.start
+F.Intrinsic.Control.SetErrorHandler("ss_OTA_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!conx.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("ss_OTA_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3553_OnTime_Analysis_Rpt_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_ota_unload)
+Function.Intrinsic.Control.EndIf
+
+
+program.sub.ss_OTA_unload.end
+
+Program.Sub.ProcessShipY.Start
+F.Intrinsic.Control.SetErrorHandler("ProcessShipY_Err")
+F.Intrinsic.Control.ClearErrors
+
+'this sub will pull in the necessary information from the varying tables
+'and store it in the GCG_BI_OnTime_Order_Analysis table
+
+V.Local.sError.Declare(String)
+V.Local.sOrderNo.Declare(String)
+V.Local.sOrderLine.Declare(String)
+V.Local.sSQL.Declare(String)
+V.Local.sDateDue.Declare(String)
+V.Local.dDateDue.Declare(Date)
+V.Local.dDateShipped.Declare(Date)
+
+V.Local.sOrderNo.Set(V.Args.Order_NO)
+V.Local.sOrderLine.Set(V.Args.Order_Line)
+
+F.Intrinsic.Control.If(V.Local.sOrderLine,=,"ALL")
+	F.Intrinsic.String.Build("Select Distinct Code_Sort,Name_Customer,OHH.Customer_PO,OHL.Order_NO,Order_Line,Part,OHL.Date_Order_Due,OHL.Date_Due, UCASE(OHL.User_4) As User_4, UCASE(OHL.User_3) As User_3, OHH.Date_Shipped From V_Order_Hist_Head AS OHH Left Outer Join V_Order_Hist_Line AS OHL On OHH.Order_No = OHL.Order_No Where OHH.Order_No= '{0}'",V.local.sOrderNo,V.local.sSQL)
+F.Intrinsic.Control.Else
+	F.Intrinsic.String.Build("Select Distinct Code_Sort,Name_Customer,OHH.Customer_PO,OHL.Order_NO,Order_Line,Part,OHL.Date_Order_Due,OHL.Date_Due,UCASE(OHL.User_4) As User_4, UCASE(OHL.User_3) AS User_3, Ohh.Date_Shipped From V_Order_Hist_Head AS OHH Left Outer Join V_Order_Hist_Line AS OHL On OHH.Order_No = OHL.Order_No Where OHH.Order_No= '{0}' AND Order_Line= '{1}'",V.local.sOrderNo,V.local.sOrderLine,V.local.sSQL)
+F.Intrinsic.Control.EndIf
+
+F.ODBC.Connection!ConX.OpenLocalRecordsetRO("rst",V.Local.sSQL)
+
+'may be opening only one record, or multiple records lets just do until eof = True
+F.Intrinsic.Control.DoUntil(V.ODBC.ConX!rst.EOF,=,True)
+	V.uGlobal.uBITable.RedimPreserve(0,V.Global.iUB)
+	'Type
+	'need to determine what type to put in 0,1,2
+	F.Intrinsic.Control.If(V.ODBC.ConX!rst.FieldValTrim!User_4,=,"WAITING CUSTOMER")
+		V.uGlobal.uBITable(V.Global.iUB)!Type.Set(2)
+	F.Intrinsic.Control.Else
+
+		F.Intrinsic.Control.If(V.ODBC.ConX!rst.fieldvaltrim!User_3,=,"MANUFACTURED")
+			V.uGlobal.uBITable(V.Global.iUB)!Type.Set(0)
+		F.Intrinsic.Control.ElseIf(V.ODBC.ConX!rst.FieldValTrim!User_3,=,"DISTRIBUTION")
+			V.uGlobal.uBITable(V.Global.iUB)!Type.Set(1)
+		'if they do not have any values in the User_3 or the User_4 field, we are going to set it to 3, not specified. that would mean an error in their order hist files, of the user fields 4 or 3 not being filled in correctly
+		F.Intrinsic.Control.Else
+			V.uGlobal.uBITable(V.Global.iUB)!Type.Set(3)
+		F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.EndIf
+
+	'Business Unit
+	V.uGlobal.uBITable(V.Global.iUB)!Bus_Unit.Set(V.ODBC.ConX!rst.FieldValTrim!Code_Sort)
+	'Customer Name
+	V.uGlobal.uBITable(V.Global.iUB)!Name_Customer.Set(V.ODBC.ConX!rst.FieldValTrim!Name_Customer)
+	'Customer Po
+	V.uGlobal.uBITable(V.Global.iUB)!Customer_PO.Set(V.ODBC.ConX!rst.FieldValTrim!Customer_PO)
+	'Order Number
+	V.uGlobal.uBITable(V.Global.iUB)!Order_NO.Set(V.ODBC.ConX!rst.FieldValTrim!Order_NO)
+	'Order Line
+	V.uGlobal.uBITable(V.Global.iUB)!Order_Line.Set(V.ODBC.ConX!rst.FieldValTrim!Order_Line)
+	'Part Number
+	V.uGlobal.uBITable(V.Global.iUB)!Part.Set(V.ODBC.ConX!rst.FieldValTrim!Part)
+	'Due Date
+	V.Local.dDateDue.Set(V.ODBC.ConX!rst.FieldValTrim!Date_Due)
+	V.uGlobal.uBITable(V.Global.iUB)!Date_Due.Set(V.Local.dDateDue)
+	V.Local.dDateShipped.Set(V.ODBC.ConX!rst.FieldValTrim!Date_Shipped)
+	'On Time Boolean
+	'Compare date_shipped versus date_Due, if date shipped is greater than the date due, the item will be considered not on time and the field will be flagged false, otherwise it will be flagged as true signalling an on time shipment
+	F.Intrinsic.Control.If(V.Local.dDateDue,<,V.Local.dDateShipped)
+		V.uGlobal.uBITable(V.Global.iUB)!On_Time.Set(False)
+	F.Intrinsic.Control.Else
+		V.uGlobal.uBITable(V.Global.iUB)!On_Time.Set(True)
+	F.Intrinsic.Control.EndIf
+
+	F.ODBC.ConX!rst.MoveNext
+	F.Intrinsic.Math.Add(V.Global.iUB,1,V.Global.iUB)
+F.Intrinsic.Control.Loop
+
+F.ODBC.ConX!rst.Close
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("ProcessShipY_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3553_OnTime_Analysis_Rpt_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_ota_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.ProcessShipY.End
+
+Program.Sub.PrintReport.Start
+F.Intrinsic.Control.SetErrorHandler("PrintReport_Err")
+F.Intrinsic.Control.ClearErrors
+
+'here we set up our new report
+'and  pass the date ranges specified
+'in the YYYY-MM-DD format that we always use.
+V.Local.sError.Declare(String)
+V.Local.sStartDate.Declare(String)
+V.Local.sEndDate.Declare(String)
+V.Local.sParam.Declare(String)
+V.Local.sValues.Declare(String)
+V.Local.iRet.Declare(Long)
+
+V.Local.sStartDate.Set(V.Screen.SS_OTA!dtpStart.Value)
+F.Intrinsic.String.Format(V.Local.sStartDate,"mm/dd/yyyy",V.Local.sStartDate)
+V.Local.sEndDate.Set(V.Screen.SS_OTA!dtpEnd.Value)
+F.Intrinsic.String.Format(V.Local.sEndDate,"mm/dd/yyyy",V.Local.sEndDate)
+
+F.Global.BI.StopLogging(V.Global.iLogID)
+V.Local.sParam.Set("sStartDate*!*sEndDate")
+F.Intrinsic.String.Build("{0}*!*{1}",V.Local.sStartDate,V.Local.sEndDate,V.Local.sValues)
+
+F.Global.BI.RunReportPreProcessor(V.Global.iBIRUNID,V.Global.iLogID,V.Local.sParam,V.Local.sValues,"",-1,True,"",-1,"",-1,"","",V.Local.iRet)
+
+F.Intrinsic.Control.Label("PrintReport_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3553_OnTime_Analysis_Rpt_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_ota_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.PrintReport.End
+
+Program.Sub.UDT2Table.Start
+F.Intrinsic.Control.SetErrorHandler("UDT2Table_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+'save udt to table
+V.Local.iC.Declare(Long)
+V.Local.sSQL.Declare(String)
+
+F.ODBC.Connection!ConX.OpenLocalRecordsetRW("rst","Select * From GCG_3553_ONT_ORD")
+F.Intrinsic.Variable.UDTSetMemberValue(V.uGlobal.uBITable!BIRUNID,V.Global.iBIRUNID)
+F.Intrinsic.Variable.SaveUDTToRecordset("ConX","rst","V.uGlobal.uBITable")
+F.Intrinsic.UI.CloseWaitDialog
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("UDT2Table_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: GCG_3553_OnTime_Analysis_Rpt_Cert.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_ota_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.UDT2Table.End
+
+Program.Sub.Comments.Start
+${$0$}$GCG_OnTime_Analysis_Rpt$}$BCC$}$10/6/2015
+${$2$}$$}$$}$1$}$4$}$GCG_OnTime_Analysis_Rpt.rpt$}$10/6/2015 4:41:24 PM$}$This is the report for the project.
+${$2$}$$}$$}$0$}$4$}$GCG_ONT_ORD_CERT.sql$}$10/6/2015 4:36:09 PM$}$CREATE TABLE "GCG_ONT_ORD_CERT"(
+ "BIRUNID" BIGINT NOT NULL ,
+ "TYPE" INTEGER,
+ "BUS_UNIT" VARCHAR(20),
+ "NAME_CUSTOMER" VARCHAR(30),
+ "CUSTOMER_PO" VARCHAR(15),
+ "ORDER_NO" VARCHAR(7),
+ "ORDER_LINE" VARCHAR(4),
+ "PART" VARCHAR(20),
+ "DATE_DUE" DATE,
+ "ON_TIME" BIT NOT NULL );
+
+${$3$}$0$}$$}$-1$}$-1$}$$}$1/1/1900$}$On time order analysis report to show break out of On-Time and Late Orders whose ship date is within the user specified dates.
+${$4$}$0$}$$}$0$}$-1$}$BCC$}$10/6/2015 4:43:41 PM$}$GS Certified. Sped up code. Added error handling. Updated outdated code such as String.Concat to String.Build. Changed to Preprocessor.
+Program.Sub.Comments.End
+
